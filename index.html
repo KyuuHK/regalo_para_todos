@@ -2,124 +2,153 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <title>Felices Fiestas 2025</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Una Carta Especial</title>
     <style>
-        /* --- CSS: DISEÑO Y ANIMACIÓN --- */
+        /* --- RESET Y BASE --- */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
         body, html {
             height: 100dvh; width: 100%;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-family: 'Georgia', serif; /* Fuente más elegante */
             overflow: hidden;
-            background-color: #0b1a21;
-            overscroll-behavior: none; /* Bloquea el rebote en iOS */
+            /* Fondo de la escena (tu imagen anterior) */
+            background: url('fondo_navidad.png') no-repeat center center/cover;
+            display: flex; justify-content: center; align-items: center;
+            perspective: 1000px; /* Fact: Crucial para el efecto 3D */
+        }
+        /* Capa oscura para mejorar contraste */
+        body::after {
+            content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.4); z-index: -1;
         }
 
-        .screen {
+        /* --- EL CONTENEDOR DEL SOBRE --- */
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            cursor: pointer;
+            transform-style: preserve-3d; /* Permite que los hijos vivan en 3D */
+            transition: transform 0.6s ease;
+        }
+        
+        /* Animación de entrada flotante */
+        .envelope-wrapper { animation: floatUp 1s ease-out; }
+        @keyframes floatUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* --- PARTES DEL SOBRE (Puro CSS) --- */
+        .envelope-body {
+            position: absolute; bottom: 0; width: 100%; height: 100%;
+            background: #d4af37; /* Color dorado/papel */
+            background: linear-gradient(to bottom right, #fceabb, #f8b500);
+            border-radius: 5px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 2;
+            overflow: hidden;
+        }
+        /* Los triángulos que forman el frente del sobre */
+        .envelope-body::after {
+            content: ''; position: absolute; width: 0; height: 0; z-index: 3;
+            border-top: 100px solid transparent;
+            border-right: 150px solid #e6c975; /* Color ligeramente diferente para dar volumen */
+            border-bottom: 100px solid #e6c975;
+            border-left: 150px solid #e6c975;
+            bottom: 0;
+        }
+
+        /* La solapa superior que se abre */
+        .flap {
+            position: absolute; top: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom right, #fceabb, #f8b500);
+            border-radius: 5px;
+            clip-path: polygon(0 0, 50% 50%, 100% 0); /* Recorta en forma de triángulo */
+            transform-origin: top; /* Fact: Gira desde el borde superior */
+            transition: transform 0.6s ease 0s, z-index 0s linear 0.3s; /* Delay en z-index para que no atraviese la carta */
+            z-index: 5;
+        }
+
+        /* El sello de cera rojo */
+        .seal {
+            position: absolute; top: 45%; left: 50%;
+            width: 50px; height: 50px;
+            background: #b71c1c;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 6;
+            display: flex; justify-content: center; align-items: center;
+            color: #900; font-weight: bold; font-size: 1.5rem;
+            transition: opacity 0.4s ease;
+        }
+
+        /* --- LA CARTA INTERIOR --- */
+        .letter {
             position: absolute;
-            width: 100%; height: 100%;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            transition: opacity 0.6s ease, transform 0.6s ease;
-            text-align: center;
+            top: 10px; left: 5%;
+            width: 90%; height: 90%;
+            background: #fffaf0; /* Blanco crema */
             padding: 20px;
+            text-align: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.4s; /* Efecto rebote al salir */
+            z-index: 1; /* Empieza detrás del sobre */
+            display: flex; flex-direction: column; justify-content: center;
         }
+        
+        .letter h2 { color: #b71c1c; font-size: 1.4rem; margin-bottom: 10px; }
+        .letter p { color: #555; font-size: 0.95rem; line-height: 1.4; }
+        .signature { margin-top: 15px; font-style: italic; color: #b71c1c; font-weight: bold; }
 
-        .active { opacity: 1; z-index: 100; visibility: visible; transform: scale(1); }
-        .hidden { opacity: 0; z-index: 1; visibility: hidden; transform: scale(1.1); pointer-events: none; }
-
-        /* --- PANTALLA 1: INICIO --- */
-        #landing-screen { background: radial-gradient(circle, #1a3c4a, #0b1a21); }
-
-        .decorations {
-            position: absolute; width: 100%; height: 100%;
-            pointer-events: none; z-index: -1;
+        /* --- ESTADOS DE APERTURA (Activados por JS) --- */
+        .envelope-wrapper.open .flap {
+            transform: rotateX(180deg); /* Abre la tapa 180 grados */
+            z-index: 0; /* Se va al fondo */
         }
-
-        .deco { position: absolute; opacity: 0.5; animation: float 3s infinite alternate ease-in-out; width: 50px; }
-        .d1 { top: 10%; left: 10%; } .d2 { top: 15%; right: 15%; }
-        .d3 { bottom: 20%; left: 15%; } .d4 { bottom: 10%; right: 10%; }
-
-        @keyframes float { 100% { transform: translateY(-15px) rotate(10deg); } }
-
-        h1 { color: white; font-size: 2.2rem; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        p { color: rgba(255,255,255,0.8); margin-bottom: 30px; }
-
-        #start-btn {
-            padding: 18px 45px; border-radius: 50px; border: none;
-            background: #f44336; color: white; font-weight: bold;
-            font-size: 1.2rem; cursor: pointer;
-            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.5);
+        .envelope-wrapper.open .seal { opacity: 0; /* El sello desaparece */ }
+        
+        .envelope-wrapper.open .letter {
+            transform: translateY(-150px) scale(1.1); /* La carta sube y crece */
+            z-index: 10; /* Se pone al frente de todo */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
         }
-
-        /* --- PANTALLA 2: FELICITACIÓN --- */
-        #wish-screen { 
-            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('fondo_navidad.png'); 
-            background-size: cover; background-position: center; 
-        }
-
-        .message-card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            max-width: 350px;
-            transform: translateY(20px);
-            opacity: 0;
-            transition: all 0.8s ease 0.3s;
-        }
-
-        .active .message-card { transform: translateY(0); opacity: 1; }
-
-        .message-card h2 { color: #b71c1c; margin-bottom: 15px; font-size: 1.8rem; }
-        .message-card p { color: #333; line-height: 1.6; font-size: 1.1rem; }
-        .signature { margin-top: 20px; font-weight: bold; color: #b71c1c !important; text-align: right; }
+        
+        /* Texto de instrucción pequeño */
+        .hint { position: absolute; bottom: 15%; color: white; opacity: 0.8; font-family: sans-serif; font-size: 0.9rem; animation: pulse 2s infinite; }
+        @keyframes pulse { 50% { opacity: 0.4; } }
     </style>
 </head>
 <body>
 
-    <section id="landing-screen" class="screen active">
-        <div class="decorations">
-            <img src="icono_navidad.png" class="deco d1">
-            <img src="icono_navidad2.png" class="deco d2">
-            <img src="icono_navidad3.png" class="deco d3">
-            <img src="icono_navidad3.png" class="deco d4">
+    <div class="envelope-wrapper" id="envelope">
+        <div class="flap"></div>
+        <div class="seal">🎄</div>
+        <div class="envelope-body"></div>
+        
+        <div class="letter">
+            <h2>¡Felices Fiestas!</h2>
+            <p>Queremos desearles a todos una Navidad llena de paz, alegría y momentos inolvidables.</p>
+            <p>¡Que el 2025 traiga salud y éxito para todos!</p>
+            <p class="signature">Con cariño,<br>LJ & Daxで</p>
         </div>
-        <div class="content">
-            <h1>¡Alerta Navideña! 🎄</h1>
-            <p>Hay un mensaje especial para todos...</p>
-            <button id="start-btn">Abrir regalo</button>
-        </div>
-    </section>
-
-    <section id="wish-screen" class="screen hidden">
-        <div class="message-card">
-            <h2>¡Felices Fiestas! ❄️</h2>
-            <p>Quisiera desearles a todos unas felices fiestas llenas de alegría, paz y momentos inolvidables con sus seres queridos.</p>
-            <p>¡Que el próximo año venga cargado de éxitos y mucha felicidad!</p>
-        </div>
-    </section>
+    </div>
+    <p class="hint" id="hint-text">Toca el sobre para abrir</p>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('start-btn');
-            const landing = document.getElementById('landing-screen');
-            const wishes = document.getElementById('wish-screen');
+        const envelope = document.getElementById('envelope');
+        const hint = document.getElementById('hint-text');
+        let isOpen = false;
 
-            // Fact: 'pointerdown' es más rápido que 'click' en móviles
-            btn.addEventListener('pointerdown', (e) => {
-                e.preventDefault();
-                
-                // Transición de pantallas
-                landing.classList.replace('active', 'hidden');
-                wishes.classList.replace('hidden', 'active');
-
-                // Fact: visibility hidden después de la animación evita clics accidentales
-                setTimeout(() => {
-                    landing.style.display = 'none';
-                }, 600);
-            });
+        // Usamos pointerdown para respuesta instantánea en móvil
+        envelope.addEventListener('pointerdown', () => {
+            if (!isOpen) {
+                envelope.classList.add('open');
+                hint.style.opacity = '0'; // Ocultar la instrucción
+                isOpen = true;
+            } else {
+                // Opcional: Si tocan de nuevo, se cierra (puedes quitar esto si no lo quieres)
+                envelope.classList.remove('open');
+                isOpen = false;
+            }
         });
     </script>
 </body>
